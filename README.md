@@ -1,27 +1,157 @@
-# Project8
+ng new project
+ng g component feedback
+app.module.ts
 
-This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 6.0.8.
+To use reactive forms, import ReactiveFormsModule from the @angular/forms package and add it to your NgModule's imports array.
 
-## Development server
+    import { BrowserModule } from '@angular/platform-browser';
+    import { NgModule } from '@angular/core';
+    import { ReactiveFormsModule} from '@angular/forms';
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The app will automatically reload if you change any of the source files.
+    import { AppComponent } from './app.component';
+    import { FeedbackComponent } from './feedback/feedback.component';
 
-## Code scaffolding
+    @NgModule({
+      declarations: [
+        AppComponent,
+        FeedbackComponent
+      ],
+      imports: [
+        BrowserModule,
+        ReactiveFormsModule
+      ],
+      providers: [],
+      bootstrap: [AppComponent]
+    })
+    export class AppModule { }
 
-Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
+app.component.html
 
-## Build
+Add feedback component using selector
 
-Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `--prod` flag for a production build.
+    <app-feedback></app-feedback>
 
-## Running unit tests
+feedback.component.html
 
-Run `ng test` to execute the unit tests via [Karma](https://karma-runner.github.io).
+The FormControl is the most basic building block when using reactive forms. To register a single form control, import the FormControl class into your component and create a new instance of FormControl to save as a class property.
 
-## Running end-to-end tests
+    <div class="col-lg-4 col-lg-offset-4 col-md-6 col-md-offset-3 col-sm-10 col-sm-offset-1 col-xs-12 feedbackBox">
+        <h3 class="text-center">Feedback Form</h3>
+        <p class="text-center">If you have a suggesssion or any feedback for us, we'd love to hear it</p>
+        <div class="alert alert-success" *ngIf="msg">
+          {{msg}}
+        </div>
+        <form [formGroup]="feedbackForm" (ngSubmit)="sendFeedback()" novalidate>
 
-Run `ng e2e` to execute the end-to-end tests via [Protractor](http://www.protractortest.org/).
+      <div class="form-group clearfix" [ngClass]="{'has-error':submitted && feedbackForm.controls['name'].errors}">
+          <label for="name">Name</label>
 
-## Further help
+          <input type="text" class="form-control" formControlName="name" placeholder="Write your name" required/>
+          <div *ngIf="submitted && feedbackForm.controls['name'].errors" class="help-block">
+              <div *ngIf="feedbackForm.controls['name'].errors.required">Name is required.</div>
+          </div>
+      </div>
+      <div class="form-group clearfix" [ngClass]="{'has-error':submitted && feedbackForm.controls['email'].errors}">
+              <label for="name">Email</label>
 
-To get more help on the Angular CLI use `ng help` or go check out the [Angular CLI README](https://github.com/angular/angular-cli/blob/master/README.md).
+              <input type="text" class="form-control" formControlName="email" placeholder="Write your email" required/>
+              <div *ngIf="submitted && feedbackForm.controls['email'].errors" class="help-block">
+                  <div *ngIf="feedbackForm.controls['email'].errors.required">Email is required.</div>
+              </div>
+          </div>
+      <div class="form-group clearfix" [ngClass]="{'has-error':submitted && feedbackForm.controls['category'].errors}">
+          <label for="category">Which service area do you have feedback for? </label>
+          <select class="form-control" name="category" formControlName="category">
+            <option *ngFor="let choice of category;" [value]="choice.id">{{choice.value}}</option>
+          </select>
+          <div *ngIf="submitted && feedbackForm.controls['category'].errors" class="help-block">
+              <div *ngIf="feedbackForm.controls['category'].errors.required">Category is required.</div>
+          </div>
+      </div>
+      <div class="form-group clearfix" [ngClass]="{'has-error':submitted && feedbackForm.controls['msg'].errors}">
+          <label for="msg">Please leave your feedback below</label>
+
+          <textarea class="form-control" formControlName="msg" rows="5" minlength="8" maxlength="100" placeholder="Write your valuable feedback"
+              required></textarea>
+          <div *ngIf="submitted && feedbackForm.controls['msg'].errors" class="help-block">
+              <div *ngIf="feedbackForm.controls['msg'].errors.required">Message is required.</div>
+              <div *ngIf="feedbackForm.controls['msg'].errors.minlength">Message must be at least 8 characters long.</div>
+              <div *ngIf="feedbackForm.controls['msg'].errors.maxlength">Message must be at most 100 characters long.</div>
+          </div>
+
+      </div>
+      <div class="form-group text-right">
+          <button class="btn btn-primary pull-right" type="submit" [disabled]="submitted && feedbackForm.invalid">Submit</button>
+      </div>
+    </form>
+    </div>  
+    
+    
+feedback.component.ts
+
+formBuilder is used for reactive forms.  Manually Set Value for FormBuilder Control using
+
+    this.feedbackForm.get('category').setValue(this.selectedCat);
+
+    or
+
+    this.feedbackForm.controls["category"].setValue(this.selectedCat);
+    
+this.feedbackForm.value is used to get the feedback form's value. this.selectedCat is set to this.category[0].id i.e 1 (be default design will be selected)
+
+    import { Component, OnInit } from '@angular/core';
+    import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+
+    @Component({
+      selector: 'app-feedback',
+      templateUrl: './feedback.component.html',
+      styleUrls: ['./feedback.component.css']
+    })
+    export class FeedbackComponent implements OnInit {
+
+      feedbackForm: FormGroup;
+      selectedCat: any[];
+      msg: any;
+      submitted = false; 
+      public category: Array<any>;
+
+      constructor(private formBuilder: FormBuilder) { 
+        this.category = [
+          { id: 1, value: 'design' },
+          { id: 2, value: 'functionality' },
+          { id: 3, value: 'performance' }
+        ];
+        this.selectedCat = this.category[0].id;
+      }
+
+      ngOnInit() {
+        this.createForm();
+      }
+
+      createForm() {    
+        this.feedbackForm = this.formBuilder.group({
+          msg: ['', [Validators.required, Validators.minLength(8), Validators.maxLength(100)]],
+          category: ['', Validators.required],
+          name: ['', Validators.required],
+          email: ['', [Validators.required, Validators.email]]
+        });
+
+        /*both will work for set value manually*/
+        //this.feedbackForm.get('category').setValue(this.selectedCat);
+        this.feedbackForm.controls["category"].setValue(this.selectedCat);
+      }
+
+      sendFeedback() {
+        this.submitted = true;
+        // stop here if form is invalid
+        if (this.feedbackForm.invalid) {
+          return;
+        }
+        else{
+          this.msg = 'Your feedback is submitted successfully';
+          console.log(this.feedbackForm.value);
+        }
+
+      }
+
+    }
